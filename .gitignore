@@ -1,0 +1,12 @@
+	# Carpetas de compilación e binarios
+bin/
+*.class
+
+# Archivos temporales de Eclipse
+.metadata/
+.recommenders/
+tmp/
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
