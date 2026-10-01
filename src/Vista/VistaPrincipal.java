@@ -1,76 +1,21 @@
 package Vista;
 
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-
-import controlador.ControlScanner; 
-
-public class VistaPrincipal extends JFrame {
-	private JTextField txtIpBase;
-	private JTextField txtInicio;
-    private JTextField txtFin;
-    private JTextField txtTimeout;
-    private JButton btnEscanear;
-    private JTable tablaResultados;
-    private DefaultTableModel modeloTabla;
-    
-    private ControlScanner controlador;
-    
-    public VistaPrincipal() {
-	controlador = new ControlScanner();
-	setTitle("Escáner de Red - MVC");
-    setSize(700, 450);
-    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    setLocationRelativeTo(null);
-    setLayout(new BorderLayout());
-    JPanel panelSuperior = new JPanel(new GridLayout(2, 5, 5, 5));
-    
-    panelSuperior.add(new JLabel("IP Base:"));
-    txtIpBase = new JTextField("192.168.1");
-    panelSuperior.add(txtIpBase);
-
-    panelSuperior.add(new JLabel("Inicio Host:"));
-    txtInicio = new JTextField("1");
-    panelSuperior.add(txtInicio);
-    
-    panelSuperior.add(new JLabel("Fin Host:"));
-    txtFin = new JTextField("254");
-    panelSuperior.add(txtFin);
-
-    panelSuperior.add(new JLabel("Timeout (ms):"));
-    txtTimeout = new JTextField("1000");
-    panelSuperior.add(txtTimeout);
-
-    btnEscanear = new JButton("Escanear");
-    panelSuperior.add(btnEscanear);
-
-    add(panelSuperior, BorderLayout.NORTH);
-    String[] columnas = {"IP", "Nombre Host", "Estado", "Tiempo (ms)"};
-    modeloTabla = new DefaultTableModel(columnas, 0);
-    tablaResultados = new JTable(modeloTabla);
-    
-    add(new JScrollPane(tablaResultados), BorderLayout.CENTER);
-
-}}
-/**package vista;
-
 import java.awt.*;
 import java.io.*;
 import java.util.*;
-import java.util.List; // evita el conflicto con java.awt.List
+import java.util.List;
 import java.util.regex.Pattern;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.*;
 import javax.swing.filechooser.*;
 import javax.swing.table.*;
 
-import controlador.ControladorEscanner;
+import controlador.ControlScanner;
 import modelo.Dispositivos;
 
+@SuppressWarnings("serial")
 public class VistaPrincipal extends JFrame {
 	private JTextField txtIp;
 	private JTextField txtInicioIp;
@@ -83,288 +28,411 @@ public class VistaPrincipal extends JFrame {
 	private JButton btnGuardar;
 	private JLabel lblMensaje;
 	private JLabel lblTotal;
-    private JTable tablaResultados;
-    private DefaultTableModel modeloTabla;
-    private TableRowSorter<DefaultTableModel> sorter;
-    private JProgressBar barraProgreso;
+	private JTable tablaResultados;
+	private DefaultTableModel modeloTabla;
+	private TableRowSorter<DefaultTableModel> sorter;
+	private JProgressBar barraProgreso;
 
-    private ControladorEscanner controlador;
-    private List<Dispositivos> resultados = new ArrayList<>();
-    private boolean escaneando = false;
+	private ControlScanner controlador;
+	private List<Dispositivos> resultados = new ArrayList<>();
+	private boolean escaneando = false;
 
-    public VistaPrincipal() {
-    	controlador = new ControladorEscanner();
+	// Paleta de Colores
+	private final Color COLOR_BG = new Color(24, 25, 32);
+	private final Color COLOR_CARD = new Color(33, 35, 45);
+	private final Color COLOR_TEXT_PRIMARY = new Color(255, 255, 255); 
+	private final Color COLOR_ACCENT = new Color(88, 101, 242);
+	private final Color COLOR_DANGER = new Color(220, 53, 69);
+	private final Color COLOR_SUCCESS = new Color(40, 167, 69);
+	private final Color COLOR_INPUT_BG = new Color(20, 21, 27);
+	private final Color COLOR_BORDER = new Color(50, 54, 70);
 
-    	setTitle("Escáner de Red LAN - TP Redes");
-        setSize(800, 500);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10));
+	public VistaPrincipal() {
+		controlador = new ControlScanner();
 
-        // Fila 1: datos del rango
-        JPanel jpFormulario = new JPanel(new FlowLayout(FlowLayout.LEFT,10,10));
+		setTitle("Escáner de Red LAN - TP Redes");
+		setSize(920, 620);
+		setMinimumSize(new Dimension(850, 550));
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLocationRelativeTo(null);
 
-        jpFormulario.add(new JLabel("IP Subred:"));
-        txtIp = new JTextField("192.168.1", 8);
-        jpFormulario.add(txtIp);
+		getContentPane().setBackground(COLOR_BG);
+		setLayout(new BorderLayout(15, 15));
+		((JPanel) getContentPane()).setBorder(new EmptyBorder(15, 15, 15, 15));
 
-        jpFormulario.add(new JLabel("Desde:"));
-        txtInicioIp = new JTextField("1", 3);
-        jpFormulario.add(txtInicioIp);
+		// ==================== PANEL NORTE ====================
+		JPanel jpNorte = new JPanel();
+		jpNorte.setLayout(new BoxLayout(jpNorte, BoxLayout.Y_AXIS));
+		jpNorte.setOpaque(false);
 
-        jpFormulario.add(new JLabel("Hasta:"));
-        txtFinIp = new JTextField("20", 3);
-        jpFormulario.add(txtFinIp);
+		// Tarjeta de Formulario
+		JPanel jpFormulario = crearPanelTarjeta();
+		jpFormulario.setLayout(new FlowLayout(FlowLayout.LEFT, 12, 10));
 
-        jpFormulario.add(new JLabel("Tiempo Máx (ms):"));
-        txtTiempoMax = new JTextField("1000", 4);
-        jpFormulario.add(txtTiempoMax);
+		jpFormulario.add(crearEtiqueta("IP Subred:"));
+		txtIp = crearTextField("192.168.1", 8);
+		jpFormulario.add(txtIp);
 
-        // Fila 2: botones y filtros
-        JPanel jpBotones = new JPanel(new FlowLayout(FlowLayout.LEFT,10,5));
+		jpFormulario.add(crearEtiqueta("Desde:"));
+		txtInicioIp = crearTextField("1", 3);
+		jpFormulario.add(txtInicioIp);
 
-        btnEscanear = new JButton("Escanear");
-        jpBotones.add(btnEscanear);
+		jpFormulario.add(crearEtiqueta("Hasta:"));
+		txtFinIp = crearTextField("20", 3);
+		jpFormulario.add(txtFinIp);
 
-        btnLimpiar = new JButton("Limpiar");
-        jpBotones.add(btnLimpiar);
+		jpFormulario.add(crearEtiqueta("Tiempo Máx (ms):"));
+		txtTiempoMax = crearTextField("1000", 4);
+		jpFormulario.add(txtTiempoMax);
 
-        btnGuardar = new JButton("Guardar resultados");
-        jpBotones.add(btnGuardar);
+		btnEscanear = crearBoton("Escanear", COLOR_ACCENT);
+		jpFormulario.add(btnEscanear);
 
-        jpBotones.add(new JLabel("Filtrar (IP o nombre):"));
-        txtFiltro = new JTextField(10);
-        jpBotones.add(txtFiltro);
+		// Tarjeta de Filtros
+		JPanel jpBotones = crearPanelTarjeta();
+		jpBotones.setLayout(new FlowLayout(FlowLayout.LEFT, 12, 10));
 
-        cmbEstado = new JComboBox<>(new String[] {"Todos", "Activos", "Inactivos"});
-        jpBotones.add(cmbEstado);
+		btnLimpiar = crearBoton("Limpiar", new Color(200, 205, 215));
+		jpBotones.add(btnLimpiar);
 
-        // Fila 3: mensaje de validación
-        lblMensaje = new JLabel(" ");
-        lblMensaje.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 0));
+		btnGuardar = crearBoton("Guardar CSV", COLOR_SUCCESS);
+		jpBotones.add(btnGuardar);
 
-        JPanel jpNorte = new JPanel(new GridLayout(3, 1));
-        jpNorte.add(jpFormulario);
-        jpNorte.add(jpBotones);
-        jpNorte.add(lblMensaje);
-        add(jpNorte, BorderLayout.NORTH);
+		jpBotones.add(Box.createHorizontalStrut(15));
+		jpBotones.add(crearEtiqueta("Buscar:"));
+		txtFiltro = crearTextField("", 10);
+		jpBotones.add(txtFiltro);
 
+		jpBotones.add(crearEtiqueta("Estado:"));
+		cmbEstado = new JComboBox<>(new String[] {"Todos", "Activos", "Inactivos"});
+		estilarComboBox(cmbEstado);
+		jpBotones.add(cmbEstado);
 
-        String[] columnas = {"IP","Nombre Dispositivo","Estado","Tiempo Respuesta (ms)"};
-        modeloTabla = new DefaultTableModel(columnas, 0) {
-        	@Override
-        	public boolean isCellEditable(int fila, int columna) {
-        		return false; // la tabla es solo de lectura
-        	}
-        	@Override
-        	public Class<?> getColumnClass(int columna) {
-        		// Con Long, la columna de tiempo se ordena como número
-        		return columna == 3 ? Long.class : String.class;
-        	}
-        };
-        tablaResultados = new JTable(modeloTabla);
+		// Mensaje de estado
+		lblMensaje = new JLabel(" ");
+		lblMensaje.setFont(new Font("Segoe UI", Font.BOLD, 12));
+		lblMensaje.setBorder(new EmptyBorder(5, 5, 5, 5));
 
-        // Permite ordenar haciendo clic en los títulos y filtrar las filas
-        sorter = new TableRowSorter<>(modeloTabla);
-        sorter.setComparator(0, (a, b) -> compararIp((String) a, (String) b));
-        tablaResultados.setRowSorter(sorter);
+		jpNorte.add(jpFormulario);
+		jpNorte.add(Box.createVerticalStrut(10));
+		jpNorte.add(jpBotones);
+		jpNorte.add(Box.createVerticalStrut(5));
+		jpNorte.add(lblMensaje);
 
-        JScrollPane scrollTabla = new JScrollPane(tablaResultados);
-        add(scrollTabla, BorderLayout.CENTER);
+		add(jpNorte, BorderLayout.NORTH);
 
+		// ==================== TABLA CENTRO ====================
+		String[] columnas = {"IP", "Nombre Dispositivo", "Estado", "Tiempo Respuesta (ms)"};
+		modeloTabla = new DefaultTableModel(columnas, 0) {
+			@Override
+			public boolean isCellEditable(int fila, int columna) {
+				return false;
+			}
 
-        JPanel panelInferior = new JPanel(new BorderLayout(5, 5));
-        barraProgreso = new JProgressBar();
-        barraProgreso.setStringPainted(true);
-        panelInferior.add(barraProgreso, BorderLayout.CENTER);
+			@Override
+			public Class<?> getColumnClass(int columna) {
+				return columna == 3 ? Long.class : String.class;
+			}
+		};
+		tablaResultados = new JTable(modeloTabla);
+		estilarTabla(tablaResultados);
 
-        lblTotal = new JLabel("Equipos que respondieron: 0");
-        panelInferior.add(lblTotal, BorderLayout.SOUTH);
+		sorter = new TableRowSorter<>(modeloTabla);
+		sorter.setComparator(0, (a, b) -> compararIp((String) a, (String) b));
+		tablaResultados.setRowSorter(sorter);
 
-        add(panelInferior, BorderLayout.SOUTH);
+		JScrollPane scrollTabla = new JScrollPane(tablaResultados);
+		scrollTabla.getViewport().setBackground(COLOR_CARD);
+		scrollTabla.setBorder(BorderFactory.createLineBorder(COLOR_BORDER, 1));
+		add(scrollTabla, BorderLayout.CENTER);
 
+		// ==================== PANEL INFERIOR ====================
+		JPanel panelInferior = new JPanel(new BorderLayout(10, 8));
+		panelInferior.setOpaque(false);
 
-        // Validación mientras se escribe
-        DocumentListener validar = alCambiar(this::validarCampos);
-        txtIp.getDocument().addDocumentListener(validar);
-        txtInicioIp.getDocument().addDocumentListener(validar);
-        txtFinIp.getDocument().addDocumentListener(validar);
-        txtTiempoMax.getDocument().addDocumentListener(validar);
+		barraProgreso = new JProgressBar();
+		barraProgreso.setStringPainted(true);
+		barraProgreso.setPreferredSize(new Dimension(barraProgreso.getPreferredSize().width, 22));
+		barraProgreso.setBackground(COLOR_CARD);
+		barraProgreso.setForeground(COLOR_ACCENT);
+		barraProgreso.setBorder(BorderFactory.createLineBorder(COLOR_BORDER));
 
-        // Filtros de la tabla
-        txtFiltro.getDocument().addDocumentListener(alCambiar(this::filtrar));
-        cmbEstado.addActionListener(e -> filtrar());
+		lblTotal = new JLabel("Equipos que respondieron: 0");
+		lblTotal.setFont(new Font("Segoe UI", Font.BOLD, 13));
+		lblTotal.setForeground(COLOR_TEXT_PRIMARY);
 
-        btnEscanear.addActionListener(e -> escanear());
-        btnLimpiar.addActionListener(e -> limpiar());
-        btnGuardar.addActionListener(e -> guardar());
+		panelInferior.add(barraProgreso, BorderLayout.CENTER);
+		panelInferior.add(lblTotal, BorderLayout.SOUTH);
 
-        validarCampos();
-    }
+		add(panelInferior, BorderLayout.SOUTH);
 
-    // Crea un DocumentListener que ejecuta la acción cada vez que cambia el texto
-    private DocumentListener alCambiar(Runnable accion) {
-    	return new DocumentListener() {
-    		@Override
-    		public void insertUpdate(DocumentEvent e) { accion.run(); }
-    		@Override
-    		public void removeUpdate(DocumentEvent e) { accion.run(); }
-    		@Override
-    		public void changedUpdate(DocumentEvent e) { accion.run(); }
-    	};
-    }
+		// ==================== EVENTOS ====================
+		DocumentListener validar = alCambiar(this::validarCampos);
+		txtIp.getDocument().addDocumentListener(validar);
+		txtInicioIp.getDocument().addDocumentListener(validar);
+		txtFinIp.getDocument().addDocumentListener(validar);
+		txtTiempoMax.getDocument().addDocumentListener(validar);
 
-    // Revisa los datos mientras el usuario escribe y muestra qué está mal
-    private void validarCampos() {
-    	String error = controlador.validarDatos(txtIp.getText(), txtInicioIp.getText(),
-    			txtFinIp.getText(), txtTiempoMax.getText());
+		txtFiltro.getDocument().addDocumentListener(alCambiar(this::filtrar));
+		cmbEstado.addActionListener(e -> filtrar());
 
-    	boolean subredMal = !txtIp.getText().isEmpty() && !controlador.esSubredValida(txtIp.getText());
-    	txtIp.setBackground(subredMal ? new Color(255, 200, 200) : Color.WHITE);
+		btnEscanear.addActionListener(e -> escanear());
+		btnLimpiar.addActionListener(e -> limpiar());
+		btnGuardar.addActionListener(e -> guardar());
 
-    	if (error == null) {
-    		lblMensaje.setForeground(new Color(0, 120, 0));
-    		lblMensaje.setText("Datos correctos. Listo para escanear.");
-    	} else {
-    		lblMensaje.setForeground(Color.RED);
-    		lblMensaje.setText(error);
-    	}
-    	btnEscanear.setEnabled(error == null && !escaneando);
-    }
+		validarCampos();
+	}
 
-    private void escanear() {
-    	String ip = txtIp.getText().trim();
-    	int inicio = Integer.parseInt(txtInicioIp.getText().trim());
-    	int fin = Integer.parseInt(txtFinIp.getText().trim());
-    	int tiempo = Integer.parseInt(txtTiempoMax.getText().trim());
+	// ==================== ESTILOS Y COMPONENTES ====================
 
-    	limpiar();
-    	escaneando = true;
-    	btnEscanear.setEnabled(false);
-    	btnLimpiar.setEnabled(false);
-    	btnGuardar.setEnabled(false);
-    	lblMensaje.setForeground(Color.DARK_GRAY);
-    	lblMensaje.setText("Escaneando...");
-    	barraProgreso.setMaximum(fin - inicio + 1);
+	private JPanel crearPanelTarjeta() {
+		JPanel panel = new JPanel();
+		panel.setBackground(COLOR_CARD);
+		panel.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(COLOR_BORDER, 1, true),
+				new EmptyBorder(5, 10, 5, 10)
+		));
+		return panel;
+	}
 
-    	// SwingWorker: hace el escaneo en segundo plano para que la ventana no se congele
-    	SwingWorker<List<Dispositivos>, Integer> worker = new SwingWorker<List<Dispositivos>, Integer>() {
-    		@Override
-    		protected List<Dispositivos> doInBackground() {
-    			return controlador.escanearRango(ip, inicio, fin, tiempo, terminados -> publish(terminados));
-    		}
+	private JLabel crearEtiqueta(String texto) {
+		JLabel label = new JLabel(texto);
+		label.setForeground(new Color(255, 255, 255));
+		label.setFont(new Font("Segoe UI", Font.BOLD, 13));
+		return label;
+	}
 
-    		@Override
-    		protected void process(List<Integer> avances) {
-    			int ultimo = avances.get(avances.size() - 1);
-    			barraProgreso.setValue(ultimo);
-    			barraProgreso.setString(ultimo + " / " + barraProgreso.getMaximum());
-    		}
+	private JTextField crearTextField(String textoInicial, int columnas) {
+		JTextField tf = new JTextField(textoInicial, columnas);
+		tf.setBackground(COLOR_INPUT_BG);
+		tf.setForeground(Color.WHITE);
+		tf.setCaretColor(Color.WHITE);
+		tf.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+		tf.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(COLOR_BORDER, 1),
+				new EmptyBorder(4, 6, 4, 6)
+		));
+		return tf;
+	}
 
-    		@Override
-    		protected void done() {
-    			try {
-    				resultados = get();
-    				mostrarResultados();
-    				lblMensaje.setText("Escaneo finalizado.");
-    			} catch (Exception ex) {
-    				lblMensaje.setForeground(Color.RED);
-    				lblMensaje.setText("Ocurrió un error durante el escaneo.");
-    				JOptionPane.showMessageDialog(VistaPrincipal.this,
-    						"Ocurrió un error durante el escaneo:\n" + ex.getMessage(),
-    						"Error", JOptionPane.ERROR_MESSAGE);
-    			}
-    			escaneando = false;
-    			btnLimpiar.setEnabled(true);
-    			btnGuardar.setEnabled(true);
-    			validarCampos();
-    		}
-    	};
-    	worker.execute();
-    }
+	// BOTONES CON TEXTO NEGRO SOBRE FONDO CLARO/BOTÓN
+	private JButton crearBoton(String texto, Color bg) {
+		JButton btn = new JButton(texto);
+		btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+		btn.setForeground(Color.BLACK); // Texto negro para legibilidad
+		btn.setBackground(bg);
+		btn.setFocusPainted(false);
+		btn.setBorder(new EmptyBorder(6, 14, 6, 14));
+		btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		return btn;
+	}
 
-    // Carga la tabla con los resultados, ordenados por IP
-    private void mostrarResultados() {
-    	resultados.sort((a, b) -> compararIp(a.getIp(), b.getIp()));
-    	int activos = 0;
-    	for (Dispositivos d : resultados) {
-    		modeloTabla.addRow(new Object[] {
-    				d.getIp(),
-    				d.getNombre(),
-    				d.getConectado() ? "Activo" : "Inactivo",
-    				d.getConectado() ? Long.valueOf(d.getTiempoRespuesta()) : null });
-    		if (d.getConectado()) {
-    			activos++;
-    		}
-    	}
-    	lblTotal.setText("Equipos que respondieron: " + activos + " de " + resultados.size());
-    }
+	// COMBOBOX CON TEXTO NEGRO SOBRE FONDO BLANCO/GRIS
+	private void estilarComboBox(JComboBox<String> combo) {
+		combo.setBackground(Color.WHITE);
+		combo.setForeground(Color.BLACK); // Texto negro
+		combo.setFont(new Font("Segoe UI", Font.BOLD, 12));
+		combo.setBorder(BorderFactory.createLineBorder(COLOR_BORDER));
+	}
 
-    private void limpiar() {
-    	modeloTabla.setRowCount(0);
-    	resultados = new ArrayList<>();
-    	barraProgreso.setValue(0);
-    	barraProgreso.setString(null);
-    	lblTotal.setText("Equipos que respondieron: 0");
-    }
+	// TABLA CON ENCABEZADO DE TEXTO NEGRO SOBRE FONDO BLANCO
+	private void estilarTabla(JTable tabla) {
+		tabla.setBackground(COLOR_CARD);
+		tabla.setForeground(COLOR_TEXT_PRIMARY);
+		tabla.setGridColor(COLOR_BORDER);
+		tabla.setRowHeight(28);
+		tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+		tabla.setSelectionBackground(COLOR_ACCENT);
+		tabla.setSelectionForeground(Color.WHITE);
 
-    private void guardar() {
-    	if (resultados.isEmpty()) {
-    		JOptionPane.showMessageDialog(this, "Todavía no hay resultados para guardar.",
-    				"Sin resultados", JOptionPane.INFORMATION_MESSAGE);
-    		return;
-    	}
-    	JFileChooser selector = new JFileChooser();
-    	selector.setSelectedFile(new File("resultados_escaneo.csv"));
-    	selector.setFileFilter(new FileNameExtensionFilter("Archivo CSV (*.csv)", "csv"));
-    	if (selector.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
-    		return;
-    	}
-    	File archivo = selector.getSelectedFile();
-    	if (!archivo.getName().toLowerCase().endsWith(".csv")) {
-    		archivo = new File(archivo.getParentFile(), archivo.getName() + ".csv");
-    	}
-    	try {
-    		controlador.guardarResultados(resultados, archivo);
-    		JOptionPane.showMessageDialog(this, "Resultados guardados en:\n" + archivo.getAbsolutePath(),
-    				"Guardado", JOptionPane.INFORMATION_MESSAGE);
-    	} catch (IOException ex) {
-    		JOptionPane.showMessageDialog(this, "No se pudo guardar el archivo:\n" + ex.getMessage(),
-    				"Error", JOptionPane.ERROR_MESSAGE);
-    	}
-    }
+		JTableHeader header = tabla.getTableHeader();
+		header.setBackground(Color.WHITE);
+		header.setForeground(Color.BLACK); // Texto negro en los títulos de la tabla
+		header.setFont(new Font("Segoe UI", Font.BOLD, 12));
+		header.setPreferredSize(new Dimension(header.getPreferredSize().width, 32));
+		header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, COLOR_BORDER));
 
-    // Filtra la tabla por texto (IP o nombre) y por estado
-    private void filtrar() {
-    	List<RowFilter<Object, Object>> filtros = new ArrayList<>();
-    	String texto = txtFiltro.getText().trim();
-    	if (!texto.isEmpty()) {
-    		filtros.add(RowFilter.regexFilter("(?i)" + Pattern.quote(texto), 0, 1));
-    	}
-    	if (cmbEstado.getSelectedIndex() == 1) {
-    		filtros.add(RowFilter.regexFilter("^Activo$", 2));
-    	} else if (cmbEstado.getSelectedIndex() == 2) {
-    		filtros.add(RowFilter.regexFilter("^Inactivo$", 2));
-    	}
+		tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+			@Override
+			public Component getTableCellRendererComponent(JTable table, Object value,
+					boolean isSelected, boolean hasFocus, int row, int column) {
+				Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+				if (!isSelected) {
+					c.setBackground(row % 2 == 0 ? COLOR_CARD : new Color(28, 30, 39));
+					if (column == 2 && value != null) {
+						if (value.toString().equals("Activo")) {
+							c.setForeground(new Color(46, 204, 113));
+						} else {
+							c.setForeground(COLOR_DANGER);
+						}
+					} else {
+						c.setForeground(COLOR_TEXT_PRIMARY);
+					}
+				}
+				return c;
+			}
+		});
+	}
 
-    	if (filtros.isEmpty()) {
-    		sorter.setRowFilter(null);
-    	} else {
-    		sorter.setRowFilter(RowFilter.andFilter(filtros));
-    	}
-    }
+	// ==================== LÓGICA DE EVENTOS ====================
 
-    // Compara dos IP número por número (así 192.168.1.20 va antes que 192.168.1.100)
-    private int compararIp(String a, String b) {
-    	String[] pa = a.split("\\.");
-    	String[] pb = b.split("\\.");
-    	for (int i = 0; i < 4; i++) {
-    		int c = Integer.compare(Integer.parseInt(pa[i]), Integer.parseInt(pb[i]));
-    		if (c != 0) {
-    			return c;
-    		}
-    	}
-    	return 0;
-    }
+	private DocumentListener alCambiar(Runnable accion) {
+		return new DocumentListener() {
+			@Override
+			public void insertUpdate(DocumentEvent e) { accion.run(); }
+			@Override
+			public void removeUpdate(DocumentEvent e) { accion.run(); }
+			@Override
+			public void changedUpdate(DocumentEvent e) { accion.run(); }
+		};
+	}
 
-}*/
+	private void validarCampos() {
+		String error = controlador.validarDatos(txtIp.getText(), txtInicioIp.getText(),
+				txtFinIp.getText(), txtTiempoMax.getText());
+
+		boolean subredMal = !txtIp.getText().isEmpty() && !controlador.esSubredValida(txtIp.getText());
+		txtIp.setBackground(subredMal ? new Color(70, 20, 25) : COLOR_INPUT_BG);
+
+		if (error == null) {
+			lblMensaje.setForeground(new Color(46, 204, 113));
+			lblMensaje.setText("Datos correctos. Listo para escanear.");
+		} else {
+			lblMensaje.setForeground(COLOR_DANGER);
+			lblMensaje.setText(error);
+		}
+		btnEscanear.setEnabled(error == null && !escaneando);
+	}
+
+	private void escanear() {
+		String ip = txtIp.getText().trim();
+		int inicio = Integer.parseInt(txtInicioIp.getText().trim());
+		int fin = Integer.parseInt(txtFinIp.getText().trim());
+		int tiempo = Integer.parseInt(txtTiempoMax.getText().trim());
+
+		limpiar();
+		escaneando = true;
+		btnEscanear.setEnabled(false);
+		btnLimpiar.setEnabled(false);
+		btnGuardar.setEnabled(false);
+		lblMensaje.setForeground(new Color(200, 205, 220));
+		lblMensaje.setText("Escaneando la red...");
+		barraProgreso.setMaximum(fin - inicio + 1);
+
+		SwingWorker<List<Dispositivos>, Integer> worker = new SwingWorker<List<Dispositivos>, Integer>() {
+			@Override
+			protected List<Dispositivos> doInBackground() {
+				return controlador.escanearRango(ip, inicio, fin, tiempo, terminados -> publish(terminados));
+			}
+
+			@Override
+			protected void process(List<Integer> avances) {
+				int ultimo = avances.get(avances.size() - 1);
+				barraProgreso.setValue(ultimo);
+				barraProgreso.setString(ultimo + " / " + barraProgreso.getMaximum());
+			}
+
+			@Override
+			protected void done() {
+				try {
+					resultados = get();
+					mostrarResultados();
+					lblMensaje.setForeground(COLOR_SUCCESS);
+					lblMensaje.setText("Escaneo finalizado correctamente.");
+				} catch (Exception ex) {
+					lblMensaje.setForeground(COLOR_DANGER);
+					lblMensaje.setText("Ocurrió un error durante el escaneo.");
+					JOptionPane.showMessageDialog(VistaPrincipal.this,
+							"Ocurrió un error durante el escaneo:\n" + ex.getMessage(),
+							"Error", JOptionPane.ERROR_MESSAGE);
+				}
+				escaneando = false;
+				btnLimpiar.setEnabled(true);
+				btnGuardar.setEnabled(true);
+				validarCampos();
+			}
+		};
+		worker.execute();
+	}
+
+	private void mostrarResultados() {
+		resultados.sort((a, b) -> compararIp(a.getIp(), b.getIp()));
+		int activos = 0;
+		for (Dispositivos d : resultados) {
+			modeloTabla.addRow(new Object[] {
+					d.getIp(),
+					d.getNombre(),
+					d.isConectado() ? "Activo" : "Inactivo",
+					d.isConectado() ? Long.valueOf(d.getTiempo()) : null });
+			if (d.isConectado()) {
+				activos++;
+			}
+		}
+		lblTotal.setText("Equipos que respondieron: " + activos + " de " + resultados.size());
+	}
+
+	private void limpiar() {
+		modeloTabla.setRowCount(0);
+		resultados = new ArrayList<>();
+		barraProgreso.setValue(0);
+		barraProgreso.setString(null);
+		lblTotal.setText("Equipos que respondieron: 0");
+	}
+
+	private void guardar() {
+		if (resultados.isEmpty()) {
+			JOptionPane.showMessageDialog(this, "Todavía no hay resultados para guardar.",
+					"Sin resultados", JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		JFileChooser selector = new JFileChooser();
+		selector.setSelectedFile(new java.io.File("resultados_escaneo.csv"));
+		selector.setFileFilter(new FileNameExtensionFilter("Archivo CSV (*.csv)", "csv"));
+		if (selector.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+			return;
+		}
+		java.io.File archivo = selector.getSelectedFile();
+		if (!archivo.getName().toLowerCase().endsWith(".csv")) {
+			archivo = new java.io.File(archivo.getParentFile(), archivo.getName() + ".csv");
+		}
+		try {
+			controlador.guardarResultados(resultados, archivo);
+			JOptionPane.showMessageDialog(this, "Resultados guardados en:\n" + archivo.getAbsolutePath(),
+					"Guardado", JOptionPane.INFORMATION_MESSAGE);
+		} catch (IOException ex) {
+			JOptionPane.showMessageDialog(this, "No se pudo guardar el archivo:\n" + ex.getMessage(),
+					"Error", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private void filtrar() {
+		List<RowFilter<Object, Object>> filtros = new ArrayList<>();
+		String texto = txtFiltro.getText().trim();
+		if (!texto.isEmpty()) {
+			filtros.add(RowFilter.regexFilter("(?i)" + Pattern.quote(texto), 0, 1));
+		}
+		if (cmbEstado.getSelectedIndex() == 1) {
+			filtros.add(RowFilter.regexFilter("^Activo$", 2));
+		} else if (cmbEstado.getSelectedIndex() == 2) {
+			filtros.add(RowFilter.regexFilter("^Inactivo$", 2));
+		}
+
+		if (filtros.isEmpty()) {
+			sorter.setRowFilter(null);
+		} else {
+			sorter.setRowFilter(RowFilter.andFilter(filtros));
+		}
+	}
+
+	private int compararIp(String a, String b) {
+		String[] pa = a.split("\\.");
+		String[] pb = b.split("\\.");
+		for (int i = 0; i < 4; i++) {
+			int c = Integer.compare(Integer.parseInt(pa[i]), Integer.parseInt(pb[i]));
+			if (c != 0) {
+				return c;
+			}
+		}
+		return 0;
+	}
+}
